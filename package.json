@@ -6,8 +6,11 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "chrome-aws-lambda": "^10.1.0", // Versión estable 2025
+    "chrome-aws-lambda": "^10.1.0",
     "puppeteer-core": "^21.0.0",
     "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
