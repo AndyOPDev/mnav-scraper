@@ -1,17 +1,13 @@
 {
-  "name": "mnav-scraper-ultimate",
-  "version": "3.0.0",
+  "name": "mnav-scraper-2025",
+  "version": "4.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "preinstall": "apt-get update && apt-get install -y chromium-browser || true",
-    "postinstall": "ln -s /usr/bin/chromium-browser /usr/bin/chromium || true"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "puppeteer-core": "^21.7.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "chrome-aws-lambda": "^10.1.0", // Versión estable 2025
+    "puppeteer-core": "^21.0.0",
+    "express": "^4.18.2"
   }
 }
