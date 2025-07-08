@@ -1,6 +1,5 @@
 const express = require('express');
-const chromium = require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -8,18 +7,22 @@ const PORT = process.env.PORT || 10000;
 app.get('/mnav', async (req, res) => {
   let browser;
   try {
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await chromium.executablePath;
-    
     browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath,
-      headless: true,
-      ignoreHTTPSErrors: true
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--single-process',
+        '--disable-dev-shm-usage'
+      ],
+      headless: 'new',
+      timeout: 60000
     });
 
     const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
+    
     await page.goto('https://www.strategy.com/', {
-      waitUntil: 'networkidle2',
+      waitUntil: 'domcontentloaded',
       timeout: 45000
     });
 
@@ -30,15 +33,14 @@ app.get('/mnav', async (req, res) => {
     res.json({ status: 'success', mnav });
 
   } catch (error) {
-    console.error('Scraper error:', error);
+    console.error('Error:', error);
     res.status(500).json({ 
       status: 'error',
-      message: 'Error fetching data',
-      error: error.message
+      message: error.message 
     });
   } finally {
     if (browser) await browser.close();
   }
 });
 
-app.listen(PORT, () => console.log(`Service running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Servidor activo en puerto ${PORT}`));
