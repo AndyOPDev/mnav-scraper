@@ -1,66 +1,40 @@
 const express = require('express');
+const chromium = require('chrome-aws-lambda'); // ★ Alternativa actualizada
 const puppeteer = require('puppeteer-core');
-const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-
-// Instala Chromium manualmente si no existe
-try {
-  execSync('which chromium || apt-get install -y chromium', { stdio: 'inherit' });
-} catch (e) {
-  console.warn('No se pudo instalar Chromium automáticamente');
-}
 
 app.get('/mnav', async (req, res) => {
   let browser;
   try {
     browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--single-process'
-      ],
-      executablePath: '/usr/bin/chromium-browser', // Ruta universal en Render
-      headless: 'new'
+      args: chromium.args,
+      executablePath: await chromium.executablePath(), // Auto-detects Chromium
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // Configuración robusta
-    await page.goto('https://www.strategy.com/', {
+    await page.goto('https://www.strategy.com/', { 
       waitUntil: 'networkidle2',
-      timeout: 45000
+      timeout: 30000 
     });
 
-    // Extracción con redundancia
-    const mnav = await page.evaluate(() => {
-      return parseFloat(
-        document.querySelector('p.tracker_numberGridLargeValue__7wTDK')?.textContent.trim() || 
-        document.querySelector('[class*="value"]')?.textContent.trim() || 
-        '0'
-      );
-    });
+    const mnav = await page.$eval(
+      'p.tracker_numberGridLargeValue__7wTDK', 
+      el => parseFloat(el.textContent.trim())
+    );
 
-    res.json({ 
-      status: 'success',
-      mnav: mnav,
-      renderedAt: new Date().toISOString()
-    });
-
+    res.json({ status: 'success', mnav });
   } catch (error) {
-    console.error('Error crítico:', error);
-    res.status(500).json({
+    console.error('Error:', error);
+    res.status(500).json({ 
       status: 'error',
-      message: 'Error en el servidor',
-      solution: 'Contacte al soporte técnico',
-      error: error.message.replace(/\n/g, ' ')
+      error: error.message 
     });
   } finally {
     if (browser) await browser.close();
   }
 });
 
-app.listen(PORT, () => console.log(`🟢 Servidor activo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
